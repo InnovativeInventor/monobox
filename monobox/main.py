@@ -36,9 +36,13 @@ import click
 @click.group(invoke_without_command=True)
 @click.pass_context
 def cli(ctx):
-    """A uniform flexible environment for coding, testing, and deploying using Docker."""
+    """
+    A uniform flexible environment for coding, testing, and deploying using Docker.
+
+    See https://github.com/InnovativeInventor/monobox for more
+    """
     if ctx.invoked_subcommand is None:
-        ctx.invoke(run("bash"))
+        ctx.invoke(bash)
 
 
 @cli.command(help="Runs bash when starting up")
@@ -56,7 +60,7 @@ def python():
     run("python3")
 
 
-@cli.command(help="Starts the container using whatever you specified in your Dockerfile")
+@cli.command(help="Starts the container using your defaults")
 def default():
     # This is for specifing things like CMD ["bash"] in your Monofile or Dockerfile
     run("")
@@ -68,11 +72,20 @@ def deploy():
     workdir = combine(['Dockerfile'])
 
     client = docker.from_env()
+    with open('.monobox', 'a') as dockerfile:
+        dockerfile.write("COPY . " + workdir)
 
     with open('.monobox', 'rb') as dockerfile:
         client.images.build(fileobj=dockerfile, pull=True, tag=project_tag)
 
-    subprocess.call(["docker", "run", "-d", "--restart", "unless-stopped", "-w="+workdir, "-v", os.getcwd()+":"+workdir, project_tag])
+    docker_command = ["docker", "run", "-d", "--restart", "unless-stopped", "-w="+workdir]
+    port_command = expose_ports()
+    docker_command.extend(port_command)
+    docker_command.append(project_tag)
+
+    subprocess.call(docker_command)
+
+    # subprocess.call(["docker", "run", "-d", "--restart", "unless-stopped", "-w="+workdir, "-v", os.getcwd()+":"+workdir, project_tag])
     print("Deployed! Run 'docker ps' to monitor the status.")
 
 
@@ -85,10 +98,46 @@ def run(command):
     with open('.monobox', 'rb') as dockerfile:
         client.images.build(fileobj=dockerfile, pull=True, tag=project_tag)
 
-    if command is not "":
-        subprocess.call(["docker", "run", "--rm", "-w="+workdir, "-v", os.getcwd()+":"+workdir, "-it", project_tag, command])
-    else:
-        subprocess.call(["docker", "run", "--rm", "-w="+workdir, "-v", os.getcwd()+":"+workdir, "-it", project_tag])
+    docker_command = ["docker", "run", "--rm", "-w="+workdir, "-v", os.getcwd()+":"+workdir, "-it"]
+    port_command = expose_ports()
+    docker_command.extend(port_command)
+    docker_command.append(project_tag)
+
+    if command is not "" and check_command is False:  # Will run command only if it is specified and if CMD is not used
+        docker_command.append(command)
+
+    subprocess.call(docker_command)
+    # if command is not "" and check_command is False:  # Will run command only if it is specified and if CMD is not used
+    #     subprocess.call(["docker", "run", "--rm", "-w="+workdir, "-v", os.getcwd()+":"+workdir, "-it", project_tag, command])
+    # else:
+    #     subprocess.call(["docker", "run", "--rm", "-w="+workdir, "-v", os.getcwd()+":"+workdir, "-it", project_tag])
+
+
+def check_command():
+    with open('.monobox', 'rb') as monobox:
+        for lines in monobox:
+            if lines.partition(' ')[0] == "CMD":
+                return True
+    return False
+
+
+def expose_ports():
+    ports = []
+    with open('.monobox') as monobox:
+        for lines in monobox:
+            if lines.partition(' ')[0] == "EXPOSE":
+                port_setting = lines.partition(' ')[2].rstrip()
+                ports.append("-p")
+
+                port_number = port_setting.partition(':')[0].rstrip()
+                try:
+                    internal_port_number = port_setting.partition(':')[3].rstrip()
+                except IndexError:
+                    internal_port_number = port_number
+
+                print("EXPOSE detected, automatically exposing " + port_number + ":" + internal_port_number)  # Verbose
+                ports.append(port_number+":"+internal_port_number)
+    return ports
 
 
 def combine(filenames):

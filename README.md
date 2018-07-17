@@ -16,13 +16,21 @@ A uniform flexible environment for coding, testing, and deploying using Docker
 
 ## Options
 ```
-usage: monobox.py [-h] [--python]
+Usage: monobox [OPTIONS] COMMAND [ARGS]...
 
-A uniform flexible environment for coding, testing, and deploying using Docker
+  A uniform flexible environment for coding, testing, and deploying using
+  Docker.
 
-optional arguments:
-  -h, --help    show this help message and exit
-  --python, -p  Runs the python interperter instead of bash (default=bash)
+Options:
+  --help  Show this message and exit.
+
+Commands:
+  bash     Runs bash when starting up
+  default  Starts the container using your defaults
+  deploy   Deploys your application using your Dockerfile
+  python   Runs the python interperter instead of bash
+  sh       Runs sh when starting up
+
 ```
 
 ## Troubleshooting
