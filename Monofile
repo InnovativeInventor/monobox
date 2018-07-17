@@ -1,5 +1,2 @@
-MONOBOX grip
 MONOBOX pytest
 MONOBOX default
-
-ENTRYPOINT grip README.md
