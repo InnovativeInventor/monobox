@@ -58,16 +58,16 @@ def run(command):
 
 	client = docker.from_env()
 
-	with open('mono/Dockerfile', 'rb') as dockerfile:
+	with open('.monobox', 'rb') as dockerfile:
 		client.images.build(fileobj=dockerfile, pull=True, tag=project_tag)
 
-	subprocess.call(["docker","run","--rm","-w="+workdir,"-v",os.getcwd()+":"+workdir,"-it",project_tag])
+	subprocess.call(["docker","run","--rm","-w="+workdir,"-v",os.getcwd()+":"+workdir,"-it",project_tag,command])
 
 def combine():
 	project_name = os.path.split(os.getcwd())[1]
 	monocommands = []
 	filenames = ['Dockerfile', 'Monofile']
-	with open('mono/Dockerfile', 'w') as outfile:
+	with open('.monobox', 'w') as outfile:
 		for fname in filenames:
 			# Check if file exists here
 			with open(fname) as infile:

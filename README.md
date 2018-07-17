@@ -8,7 +8,7 @@ A uniform flexible environment for coding, testing, and deploying using Docker
 ## Recommendations
 - Use the monobox shortcuts by adding `monobox package` to your Monofile.
 - Add your `.gitconfig` file to your developing folder so it gets copied into the Dockerfile
-- Add `/mono` to your `.gitignore`
+- Add `.monobox` to your `.gitignore`
 
 ## Planned Features
 - [ ] Easy one-step deployment
