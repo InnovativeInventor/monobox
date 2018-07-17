@@ -125,7 +125,7 @@ def deduplicate(file):
     lines_seen = set()  # holds lines already seen
     unique_lines = []
     for line in open(file, "r"):
-        if line not in lines_seen:  # not a duplicate
+        if line not in lines_seen and "&&" not in line and "\\" not in line:  # not a duplicate
             unique_lines.append(line)
             lines_seen.add(line)
     with open(file, "w") as unique_file:
