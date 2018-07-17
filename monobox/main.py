@@ -207,7 +207,7 @@ def fetch_box(item):
         if "." in item:
             boxfile = req.get(item)
         else:
-            boxfile = req.get('https://raw.githubusercontent.com/InnovativeInventor/monobox/master/boxes/'+item+'/Monofile')
+            boxfile = req.get('https://raw.githubusercontent.com/InnovativeInventor/boxes/master/'+item+'/Monofile')
         boxfile.raise_for_status()
     except req.HTTPError:
         print("MONOBOX fetch failed!: HTTPError")  # In the future, silently log this

@@ -9,6 +9,7 @@ A uniform flexible environment for coding, testing, and deploying using Docker
 - Use the monobox shortcuts by adding `monobox package` to your Monofile.
 - Add your `.gitconfig` file to your developing folder so it gets copied into the Dockerfile
 - Add `.monobox` to your `.gitignore`
+- If you want to use your own boxes, just create a folder called boxes and follow the same structure in https://github.com/InnovativeInventor/boxes
 
 ## Options
 ```
