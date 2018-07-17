@@ -13,3 +13,14 @@ A uniform flexible environment for coding, testing, and deploying using Docker
 ## Planned Features
 - [ ] Easy one-step deployment
 - [ ] Remote fetching of monofiles
+
+## Options
+```
+usage: monobox.py [-h] [--python]
+
+A uniform flexible environment for coding, testing, and deploying using Docker
+
+optional arguments:
+  -h, --help    show this help message and exit
+  --python, -p  Runs the python interperter instead of bash (default=bash)
+```

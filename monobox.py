@@ -26,119 +26,98 @@
 # SOFTWARE.
 
 import docker
-import shutil
-import click
 import os
 import requests as req
 import io
 import subprocess
-from pathlib import Path
-import configparser
+import argparse
 
-@click.group()
-@click.pass_context
-def cli(ctx):
-	"""
-	A uniform flexible environment for coding, testing, and deploying using Docker
-	"""
-
-@click.command()
-@click.pass_context
-def main(ctx):
-	run("bash")
-	# client.containers.run(project_tag, 'echo "test"', name=project_name, stdout=True, stderr=True, tty=True)
-	# client.containers.remove()
-	# client.attach()
 
 def run(command):
-	home = os.getenv("HOME")
-	project_tag = os.path.split(os.getcwd())[1] + ":devel"
-	project_name = os.path.split(os.getcwd())[1]+"-devel"
-	workdir = combine()
+    project_tag = os.path.split(os.getcwd())[1] + ":devel"
+    workdir = combine()
 
-	client = docker.from_env()
+    client = docker.from_env()
 
-	with open('.monobox', 'rb') as dockerfile:
-		client.images.build(fileobj=dockerfile, pull=True, tag=project_tag)
+    with open('.monobox', 'rb') as dockerfile:
+        client.images.build(fileobj=dockerfile, pull=True, tag=project_tag)
 
-	subprocess.call(["docker","run","--rm","-w="+workdir,"-v",os.getcwd()+":"+workdir,"-it",project_tag,command])
+    subprocess.call(["docker", "run", "--rm", "-w="+workdir, "-v", os.getcwd()+":"+workdir, "-it", project_tag, command])
+
 
 def combine():
-	project_name = os.path.split(os.getcwd())[1]
-	monocommands = []
-	filenames = ['Dockerfile', 'Monofile']
-	with open('.monobox', 'w') as outfile:
-		for fname in filenames:
-			# Check if file exists here
-			with open(fname) as infile:
-				for line in infile:
-					if line.partition(' ')[0] == "MONOBOX":
-						outfile.writelines(monocommand(line))
-					elif line.partition(' ')[0] == "WORKDIR":
-						workdir=line
-					else:
-						outfile.write(line)
-	try:
-		if not workdir:
-			workdir = "/"+project_name
-		return workdir
-	except:
-		return "/"+project_name
+    project_name = os.path.split(os.getcwd())[1]
+    filenames = ['Dockerfile', 'Monofile']
+    with open('.monobox', 'w') as outfile:
+        for fname in filenames:
+            # Check if file exists here
+            with open(fname) as infile:
+                for line in infile:
+                    if line.partition(' ')[0] == "MONOBOX":
+                        outfile.writelines(monocommand(line))
+                    elif line.partition(' ')[0] == "WORKDIR":
+                        workdir = line
+                    else:
+                        outfile.write(line)
+    try:
+        if not workdir:
+            workdir = "/"+project_name
+        return workdir
+    except NameError:
+        return "/"+project_name
+
 
 def monocommand(line):
-	boxes = []
+    boxes = []
 
-	for boxcommand in line.split(' ')[1:]:
-		processed_command = boxcommand.rstrip()
-		# try:
-		if os.path.isfile('boxes/'+processed_command+'/Monofile'):
-			with open('boxes/'+processed_command+'/Monofile') as infile:
-				for infile_line in infile:
-					if infile_line.partition(' ')[0] == "MONOBOX":
-						boxes = boxes + monocommand(infile_line)
-					else:
-						boxes.append(infile_line)
-		else:
-			boxes = boxes + fetch_box(processed_command)
-		# except:
-		# 	print("MONOBOX command failed!") # In the future, silently log this
+    for boxcommand in line.split(' ')[1:]:
+        processed_command = boxcommand.rstrip()
+        if os.path.isfile('boxes/'+processed_command+'/Monofile'):
+            with open('boxes/'+processed_command+'/Monofile') as infile:
+                for infile_line in infile:
+                    if infile_line.partition(' ')[0] == "MONOBOX":
+                        boxes = boxes + monocommand(infile_line)
+                    else:
+                        boxes.append(infile_line)
+        else:
+            boxes = boxes + fetch_box(processed_command)
+    return boxes
 
-	return boxes
 
 def fetch_box(item):
-	lines = []
-	try:
-		if "." in item:
-			boxfile = req.get(item)
-		else:
-			boxfile = req.get('https://raw.githubusercontent.com/InnovativeInventor/editable-twitter/master/monofile/boxes/'+item+'/Monofile')
-		boxfile.raise_for_status()
-	except:
-		print("MONOBOX fetch failed!") # In the future, silently log this
-		return
+    lines = []
+    try:
+        if "." in item:
+            boxfile = req.get(item)
+        else:
+            boxfile = req.get('https://raw.githubusercontent.com/InnovativeInventor/monobox/master/boxes/'+item+'/Monofile')
+        boxfile.raise_for_status()
+    except req.HTTPError:
+        print("MONOBOX fetch failed!: HTTPError")  # In the future, silently log this
+        return
+    except req.URLError:
+        print("MONOBOX fetch failed!: URLError")  # In the future, silently log this
+        return
 
-	for each_line in io.StringIO(boxfile.content.decode('utf-8')):
-		if each_line.partition(' ')[0] == "MONOBOX":
-			lines = lines + monocommand(each_line)
-		else:
-			lines.append(each_line)
+    for each_line in io.StringIO(boxfile.content.decode('utf-8')):
+        if each_line.partition(' ')[0] == "MONOBOX":
+            lines = lines + monocommand(each_line)
+        else:
+            lines.append(each_line)
 
-	return lines
+    return lines
 
-# @cli.command()
-# @click.pass_context
-# def deploy():
-# 	project_tag = os.path.split(os.getcwd())[1] + ":deploy"
-# 	with open('Dockerfile', 'rb') as dockerfile:
-# 		client.images.build(fileobj=dockerfile, pull=True, tag=project_tag)
-#
-# 	subprocess.call(["docker","run","--rm","-w="+workdir,"-v",os.getcwd()+":"+workdir,"-it",project_tag])
-# 	print("Deployed!")
 
-@cli.command()
-@click.pass_context
-def python():
-	run(python3)
+def arguments():
+    parser = argparse.ArgumentParser(description='A uniform flexible environment for coding, testing, and deploying using Docker')
+    parser.add_argument("--python", "-p", help="Runs the python interperter instead of bash (default=bash)", action='store_true')
+    args = parser.parse_args()
+    return args
+
 
 if __name__ == "__main__":
-	main()
+    args = arguments()
+    if args.python:
+        run("python")
+    else:
+        run("bash")

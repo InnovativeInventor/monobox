@@ -2,4 +2,5 @@ FROM python:latest
 
 LABEL maintainer="InnovativeInventor"
 
-RUN pip3 install flask
+RUN echo "Hello, world!" > /etc/motd
+RUN echo "cat /etc/motd" > /etc/bash.bashrc
