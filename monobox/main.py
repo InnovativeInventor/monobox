@@ -33,6 +33,7 @@ import subprocess
 import click
 
 
+@click.version_option(prog_name="monobox")
 @click.group(invoke_without_command=True)
 @click.pass_context
 def cli(ctx):
@@ -72,9 +73,15 @@ def deploy():
     workdir = combine(['Dockerfile'])
 
     client = docker.from_env()
+
+    # Copies instead of mounting
     with open('.monobox', 'a') as dockerfile:
         dockerfile.write("COPY . " + workdir)
 
+    # Deduplicates
+    deduplicate('.monobox')
+
+    # Builds
     with open('.monobox', 'rb') as dockerfile:
         client.images.build(fileobj=dockerfile, pull=True, tag=project_tag)
 
@@ -95,6 +102,10 @@ def run(command):
 
     client = docker.from_env()
 
+    # Deduplicates
+    deduplicate('.monobox')
+
+    # Builds
     with open('.monobox', 'rb') as dockerfile:
         client.images.build(fileobj=dockerfile, pull=True, tag=project_tag)
 
@@ -108,6 +119,18 @@ def run(command):
         docker_command.append(command)
 
     subprocess.call(docker_command)
+
+
+def deduplicate(file):
+    lines_seen = set()  # holds lines already seen
+    unique_lines = []
+    for line in open(file, "r"):
+        if line not in lines_seen:  # not a duplicate
+            unique_lines.append(line)
+            lines_seen.add(line)
+    with open(file, "w") as unique_file:
+        for lines in unique_lines:
+            unique_file.write(lines)
 
 
 def check_command():

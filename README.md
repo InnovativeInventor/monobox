@@ -10,10 +10,6 @@ A uniform flexible environment for coding, testing, and deploying using Docker
 - Add your `.gitconfig` file to your developing folder so it gets copied into the Dockerfile
 - Add `.monobox` to your `.gitignore`
 
-## Planned Features
-- [ ] Easy one-step deployment
-- [ ] Unit tests
-
 ## Options
 ```
 Usage: monobox [OPTIONS] COMMAND [ARGS]...
