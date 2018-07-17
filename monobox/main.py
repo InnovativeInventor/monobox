@@ -79,13 +79,9 @@ def deploy():
         client.images.build(fileobj=dockerfile, pull=True, tag=project_tag)
 
     docker_command = ["docker", "run", "-d", "--restart", "unless-stopped", "-P", "-w="+workdir]
-    # port_command = expose_ports()
-    # docker_command.extend(port_command)
     docker_command.append(project_tag)
 
     subprocess.call(docker_command)
-
-    # subprocess.call(["docker", "run", "-d", "--restart", "unless-stopped", "-w="+workdir, "-v", os.getcwd()+":"+workdir, project_tag])
     print("Deployed! Run 'docker ps' to monitor the status.")
 
 
@@ -99,19 +95,12 @@ def run(command):
         client.images.build(fileobj=dockerfile, pull=True, tag=project_tag)
 
     docker_command = ["docker", "run", "--rm", "-w="+workdir, "-P", "-v", os.getcwd()+":"+workdir, "-it"]
-
-    # port_command = expose_ports()
-    # docker_command.extend(port_command)
     docker_command.append(project_tag)
 
     if command is not "" and check_command is False:  # Will run command only if it is specified and if CMD is not used
         docker_command.append(command)
 
     subprocess.call(docker_command)
-    # if command is not "" and check_command is False:  # Will run command only if it is specified and if CMD is not used
-    #     subprocess.call(["docker", "run", "--rm", "-w="+workdir, "-v", os.getcwd()+":"+workdir, "-it", project_tag, command])
-    # else:
-    #     subprocess.call(["docker", "run", "--rm", "-w="+workdir, "-v", os.getcwd()+":"+workdir, "-it", project_tag])
 
 
 def check_command():
@@ -120,25 +109,6 @@ def check_command():
             if lines.partition(' ')[0] == "CMD":
                 return True
     return False
-
-
-# def expose_ports():
-#     ports = []
-#     with open('.monobox') as monobox:
-#         for lines in monobox:
-#             if lines.partition(' ')[0] == "EXPOSE":
-#                 port_setting = lines.partition(' ')[2].rstrip()
-#                 ports.append("-p")
-#
-#                 port_number = port_setting.partition(':')[0].rstrip()
-#                 try:
-#                     internal_port_number = port_setting.partition(':')[3].rstrip()
-#                 except IndexError:
-#                     internal_port_number = port_number
-#
-#                 print("EXPOSE detected, automatically exposing " + port_number + ":" + internal_port_number)  # Verbose
-#                 ports.append(port_number+":"+internal_port_number)
-#     return ports
 
 
 def combine(filenames):
