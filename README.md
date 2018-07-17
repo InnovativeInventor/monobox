@@ -6,7 +6,7 @@ A uniform flexible environment for coding, testing, and deploying using Docker
 - When deploying, simply take your Dockerfile and use it in production!
 
 ## Recommendations
-- Use the monobox shortcuts by adding `monobox package` to your Monofile.
+- Use the monobox shortcuts by adding `monobox package` to your Monofile. You can explore the list of boxes at https://boxes.homelabs.space/
 - Add your `.gitconfig` file to your developing folder so it gets copied into the Dockerfile
 - Add `.monobox` to your `.gitignore`
 - If you want to use your own boxes, just create a folder called boxes and follow the same structure in https://github.com/InnovativeInventor/boxes
