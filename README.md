@@ -12,7 +12,7 @@ A uniform flexible environment for coding, testing, and deploying using Docker
 
 ## Planned Features
 - [ ] Easy one-step deployment
-- [ ] Remote fetching of monofiles
+- [ ] Unit tests
 
 ## Options
 ```
@@ -24,3 +24,6 @@ optional arguments:
   -h, --help    show this help message and exit
   --python, -p  Runs the python interperter instead of bash (default=bash)
 ```
+
+## Troubleshooting
+If you see `launchpadlib 1.10.6 requires testresources, which is not installed.`, then run `sudo apt install python-testresources` and restart the terminal.

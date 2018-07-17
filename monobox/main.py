@@ -30,35 +30,83 @@ import os
 import requests as req
 import io
 import subprocess
-import argparse
+import click
 
 
-def run(command):
-    project_tag = os.path.split(os.getcwd())[1] + ":devel"
-    workdir = combine()
+@click.group(invoke_without_command=True)
+@click.pass_context
+def cli(ctx):
+    """A uniform flexible environment for coding, testing, and deploying using Docker."""
+    if ctx.invoked_subcommand is None:
+        ctx.invoke(run("bash"))
+
+
+@cli.command(help="Runs bash when starting up")
+def bash():
+    run("bash")
+
+
+@cli.command(help="Runs sh when starting up")
+def sh():
+    run("sh")
+
+
+@cli.command(help="Runs the python interperter instead of bash")
+def python():
+    run("python3")
+
+
+@cli.command(help="Starts the container using whatever you specified in your Dockerfile")
+def default():
+    # This is for specifing things like CMD ["bash"] in your Monofile or Dockerfile
+    run("")
+
+
+@cli.command(help="Deploys your application using your Dockerfile")
+def deploy():
+    project_tag = os.path.split(os.getcwd())[1] + ":deploy"
+    workdir = combine(['Dockerfile'])
 
     client = docker.from_env()
 
     with open('.monobox', 'rb') as dockerfile:
         client.images.build(fileobj=dockerfile, pull=True, tag=project_tag)
 
-    subprocess.call(["docker", "run", "--rm", "-w="+workdir, "-v", os.getcwd()+":"+workdir, "-it", project_tag, command])
+    subprocess.call(["docker", "run", "-d", "--restart", "unless-stopped", "-w="+workdir, "-v", os.getcwd()+":"+workdir, project_tag])
+    print("Deployed! Run 'docker ps' to monitor the status.")
 
 
-def combine():
+def run(command):
+    project_tag = os.path.split(os.getcwd())[1] + ":devel"
+    workdir = combine(['Dockerfile', 'Monofile'])
+
+    client = docker.from_env()
+
+    with open('.monobox', 'rb') as dockerfile:
+        client.images.build(fileobj=dockerfile, pull=True, tag=project_tag)
+
+    if command is not "":
+        subprocess.call(["docker", "run", "--rm", "-w="+workdir, "-v", os.getcwd()+":"+workdir, "-it", project_tag, command])
+    else:
+        subprocess.call(["docker", "run", "--rm", "-w="+workdir, "-v", os.getcwd()+":"+workdir, "-it", project_tag])
+
+
+def combine(filenames):
     project_name = os.path.split(os.getcwd())[1]
-    filenames = ['Dockerfile', 'Monofile']
     with open('.monobox', 'w') as outfile:
         for fname in filenames:
-            # Check if file exists here
-            with open(fname) as infile:
-                for line in infile:
-                    if line.partition(' ')[0] == "MONOBOX":
-                        outfile.writelines(monocommand(line))
-                    elif line.partition(' ')[0] == "WORKDIR":
-                        workdir = line
-                    else:
-                        outfile.write(line)
+            if os.path.isfile(fname):
+                with open(fname) as infile:
+                    for line in infile:
+                        if line.partition(' ')[0] == "MONOBOX":
+                            outfile.writelines(monocommand(line))
+                        elif line.partition(' ')[0] == "WORKDIR":
+                            workdir = line
+                        else:
+                            outfile.write(line)
+            else:
+                print("Error: " + fname + " does not exist!")
+                exit(1)
     try:
         if not workdir:
             workdir = "/"+project_name
@@ -108,16 +156,5 @@ def fetch_box(item):
     return lines
 
 
-def arguments():
-    parser = argparse.ArgumentParser(description='A uniform flexible environment for coding, testing, and deploying using Docker')
-    parser.add_argument("--python", "-p", help="Runs the python interperter instead of bash (default=bash)", action='store_true')
-    args = parser.parse_args()
-    return args
-
-
 if __name__ == "__main__":
-    args = arguments()
-    if args.python:
-        run("python")
-    else:
-        run("bash")
+    cli()
