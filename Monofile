@@ -2,4 +2,4 @@ MONOBOX grip
 MONOBOX pytest
 MONOBOX default
 
-CMD grip README.md
+ENTRYPOINT grip README.md
