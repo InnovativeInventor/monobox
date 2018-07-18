@@ -174,8 +174,8 @@ def combine(filenames):
                         else:
                             outfile.write(line)
             else:
-                print("Error: " + fname + " does not exist!")
-                exit(1)
+                print("Warning: " + fname + " does not exist!")
+
     try:
         if not workdir:
             workdir = "/"+project_name
@@ -207,14 +207,14 @@ def fetch_box(item):
         if "." in item:
             boxfile = req.get(item)
         else:
-            boxfile = req.get('https://raw.githubusercontent.com/InnovativeInventor/boxes/master/'+item+'/Monofile')
+            boxfile = req.get('https://raw.githubusercontent.com/InnovativeInventor/boxes/master/boxes/'+item+'/Monofile')
         boxfile.raise_for_status()
-    except req.HTTPError:
-        print("MONOBOX fetch failed!: HTTPError")  # In the future, silently log this
-        return
-    except req.URLError:
-        print("MONOBOX fetch failed!: URLError")  # In the future, silently log this
-        return
+    except req.HTTPError or req.URLError:
+        try:
+            boxfile = req.get('https://boxes.homelabs.space/'+item+'/Monofile')
+            boxfile.raise_for_status()
+        except req.HTTPError or req.URLError:
+            print("Monobox fetch error! The box you used does not exist")
 
     for each_line in io.StringIO(boxfile.content.decode('utf-8')):
         if each_line.partition(' ')[0] == "MONOBOX":
