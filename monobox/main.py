@@ -78,9 +78,6 @@ def deploy():
     with open('.monobox', 'a') as dockerfile:
         dockerfile.write("COPY . " + workdir)
 
-    # Deduplicates
-    deduplicate('.monobox')
-
     # Builds
     with open('.monobox', 'rb') as dockerfile:
         client.images.build(fileobj=dockerfile, pull=True, tag=project_tag)
@@ -102,9 +99,6 @@ def run(command):
 
     client = docker.from_env()
 
-    # Deduplicates
-    deduplicate('.monobox')
-
     # Builds
     with open('.monobox', 'rb') as dockerfile:
         client.images.build(fileobj=dockerfile, pull=True, tag=project_tag)
@@ -121,16 +115,17 @@ def run(command):
     subprocess.call(docker_command)
 
 
-def deduplicate(file):
-    lines_seen = set()  # holds lines already seen
-    unique_lines = []
-    for line in open(file, "r"):
-        if line not in lines_seen and "&&" not in line and "\\" not in line:  # not a duplicate
-            unique_lines.append(line)
-            lines_seen.add(line)
-    with open(file, "w") as unique_file:
-        for lines in unique_lines:
-            unique_file.write(lines)
+# def deduplicate(file):
+#     pass
+#     # lines_seen = set()  # holds lines already seen
+#     # unique_lines = []
+#     # for line in open(file, "r"):
+#     #     if line not in lines_seen and "&&" not in line and "\\" not in line:  # not a duplicate
+#     #         unique_lines.append(line)
+#     #         lines_seen.add(line)
+#     # with open(file, "w") as unique_file:
+#     #     for lines in unique_lines:
+#     #         unique_file.write(lines)
 
 
 def check_command():
@@ -162,17 +157,19 @@ def expose_ports():
 
 def combine(filenames):
     project_name = os.path.split(os.getcwd())[1]
-    with open('.monobox', 'w') as outfile:
+    with open('.monobox', 'w') as monofile:
         for fname in filenames:
             if os.path.isfile(fname):
                 with open(fname) as infile:
                     for line in infile:
                         if line.partition(' ')[0] == "MONOBOX":
-                            outfile.writelines(monocommand(line))
+                            lines_to_write = monocommand(line)
+                            monofile.writelines(lines_to_write)
                         elif line.partition(' ')[0] == "WORKDIR":
+                            monofile.write(line)
                             workdir = line
                         else:
-                            outfile.write(line)
+                            monofile.write(line)
             else:
                 print("Warning: " + fname + " does not exist!")
 
