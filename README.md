@@ -5,7 +5,7 @@ A uniform flexible environment for coding, testing, and deploying using Docker
 - Create your Monofile and Dockerfile. Your Monofile will include everything you need when developing, and your Dockerfile will include everything else
 - When deploying, simply take your Dockerfile and use it in production!
 
-For guidanceguidance, look at this example monobox project: https://github.com/InnovativeInventor/monobox-example.
+For guidance, look at this example monobox project: https://github.com/InnovativeInventor/monobox-example.
 
 ## Recommendations
 - Use the monobox shortcuts by adding `monobox package` to your Monofile. You can explore the list of boxes at https://boxes.homelabs.space/
