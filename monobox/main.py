@@ -93,6 +93,19 @@ def deploy():
     print("Deployed! Run 'docker ps' to monitor the status.")
 
 
+@cli.command(help="Builds the docker image")
+def build():
+    project_tag = os.path.split(os.getcwd())[1]
+    combine(['Dockerfile', 'Monofile']) # No need for workdir
+
+    client = docker.from_env()
+
+    # Builds
+    with open('.monobox', 'rb') as dockerfile:
+        client.images.build(fileobj=dockerfile, pull=True, tag=project_tag)
+
+    print("Built as " + project_tag)
+
 def run(command):
     project_tag = os.path.split(os.getcwd())[1] + ":devel"
     workdir = combine(['Dockerfile', 'Monofile'])
