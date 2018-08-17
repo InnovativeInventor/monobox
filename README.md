@@ -1,4 +1,6 @@
 ## monobox
+[![Build Status](https://travis-ci.com/InnovativeInventor/monobox.svg?branch=master)](https://travis-ci.com/InnovativeInventor/monobox)
+
 A uniform flexible environment for coding, testing, and deploying using Docker
 
 ## Suggested Workflow
