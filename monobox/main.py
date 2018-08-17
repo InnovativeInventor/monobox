@@ -69,7 +69,7 @@ def default():
 
 @cli.command(help="Deploys your application using your Dockerfile")
 def deploy():
-    project_tag = os.path.split(os.getcwd())[1] + ":deploy"
+    project_tag = os.path.split(os.getcwd())[1].lower() + ":deploy"
     workdir = combine(['Dockerfile'])
 
     client = docker.from_env()
@@ -81,6 +81,7 @@ def deploy():
     # Builds
     with open('.monobox', 'rb') as dockerfile:
         client.images.build(fileobj=dockerfile, pull=True, tag=project_tag)
+
 
     docker_command = ["docker", "run", "-d", "--restart", "unless-stopped", "-w="+workdir]
     port_command = expose_ports()
@@ -95,7 +96,7 @@ def deploy():
 
 @cli.command(help="Builds the docker image")
 def build():
-    project_tag = os.path.split(os.getcwd())[1]
+    project_tag = os.path.split(os.getcwd())[1].lower()
     combine(['Dockerfile', 'Monofile']) # No need for workdir
 
     client = docker.from_env()
@@ -107,7 +108,7 @@ def build():
     print("Built as " + project_tag)
 
 def run(command):
-    project_tag = os.path.split(os.getcwd())[1] + ":devel"
+    project_tag = os.path.split(os.getcwd())[1].lower() + ":devel"
     workdir = combine(['Dockerfile', 'Monofile'])
 
     client = docker.from_env()
@@ -126,20 +127,7 @@ def run(command):
         docker_command.append(command)
 
     subprocess.call(docker_command)
-
-
-# def deduplicate(file):
-#     pass
-#     # lines_seen = set()  # holds lines already seen
-#     # unique_lines = []
-#     # for line in open(file, "r"):
-#     #     if line not in lines_seen and "&&" not in line and "\\" not in line:  # not a duplicate
-#     #         unique_lines.append(line)
-#     #         lines_seen.add(line)
-#     # with open(file, "w") as unique_file:
-#     #     for lines in unique_lines:
-#     #         unique_file.write(lines)
-
+    
 
 def check_command():
     with open('.monobox', 'r') as monobox:
