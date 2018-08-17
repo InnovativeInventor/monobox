@@ -1,0 +1,15 @@
+language: python
+python: 
+  - "3.4"
+  - "3.5"
+  - "3.6"
+  # - "3.7"
+
+before_install: 
+  - curl -fsSL https://goss.rocks/install | sudo sh
+  - git clone https://github.com/InnovativeInventor/boxes
+  - python3 setup.py install
+
+script: 
+  - bash tests/goss_test.sh
+  - bash tests/boxes_test.sh

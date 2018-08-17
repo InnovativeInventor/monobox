@@ -1,0 +1,9 @@
+command:
+  monobox build:
+    # required attributes
+    exit-status: 0
+    # optional attributes
+    stdout:
+    - "Built as monobox-example"
+    stderr: []
+    timeout: 100000 # in milliseconds
