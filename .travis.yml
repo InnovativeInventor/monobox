@@ -1,0 +1,10 @@
+language: python
+python: 
+  - "3.6"
+  - "3.7-dev"
+
+before_install: 
+  - curl -fsSL https://goss.rocks/install | sudo sh
+  - python3 setup.py install
+
+script: bash tests/test.sh
