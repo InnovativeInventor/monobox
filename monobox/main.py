@@ -202,7 +202,8 @@ def monocommand(line):
 def fetch_box(item):
     lines = []
     try:
-        if "." in item:  # Can add your own boxes by using the url
+        if "." in item:  # Can add your own boxes by using the url. Box names should not have periods in them
+            print("Fetching remote box @" + item)
             boxfile = req.get(item)
         else:
             boxfile = req.get('https://raw.githubusercontent.com/InnovativeInventor/boxes/master/boxes/'+item+'/Monofile')
