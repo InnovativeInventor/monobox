@@ -31,10 +31,11 @@ import requests as req
 import io
 import subprocess
 import click
+import sys
 
 
 @click.version_option(prog_name="monobox")
-@click.group(invoke_without_command=True)
+@click.group(invoke_without_command=True,context_settings=dict(ignore_unknown_options=True, allow_extra_args=True))
 @click.pass_context
 def cli(ctx):
     """
@@ -44,24 +45,47 @@ def cli(ctx):
     """
     if ctx.invoked_subcommand is None:
         ctx.invoke(bash)
+    elif ctx.invoked_subcommand == "cmd":
+        if len(sys.argv) <= 2:
+            raise click.UsageError("Exec requries at least another argument")
+        else:
+            cmd()
+    # else:
+    #     print(ctx.invoked_subcommand)
 
 
-@cli.command(help="Runs bash when starting up")
+def extra_args():
+    if len(sys.argv) <=2:
+        return None
+
+    cmd_list = sys.argv[2:] # Should try to use click instead of sys.argv
+    exec_cmd = ' '.join(str(i) for i in cmd_list)
+    
+    print("Command: " + exec_cmd)
+        
+    return exec_cmd
+
+
+@cli.command(help="Runs whatever is specified", context_settings=dict(ignore_unknown_options=True, allow_extra_args=True))
+def cmd():
+    run(extra_args())
+
+@cli.command(help="Runs bash when starting up (default)", context_settings=dict(ignore_unknown_options=True, allow_extra_args=True))
 def bash():
-    run("bash")
+    run("bash " + extra_args())
 
 
-@cli.command(help="Runs sh when starting up")
+@cli.command(help="Runs sh when starting up instead of bash", context_settings=dict(ignore_unknown_options=True, allow_extra_args=True))
 def sh():
-    run("sh")
+    run("sh " + extra_args())
 
 
-@cli.command(help="Runs the python interperter instead of bash")
+@cli.command(help="Runs the python interperter instead of bash", context_settings=dict(ignore_unknown_options=True, allow_extra_args=True))
 def python():
-    run("python3")
+    run("python3 " + extra_args())
 
 
-@cli.command(help="Starts the container using your defaults")
+@cli.command(help="Starts the container using your defaults", context_settings=dict(ignore_unknown_options=True, allow_extra_args=True))
 def default():
     # This is for specifing things like CMD ["bash"] in your Monofile or Dockerfile
     run("")
