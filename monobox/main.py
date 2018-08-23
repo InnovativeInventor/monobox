@@ -50,8 +50,6 @@ def cli(ctx):
             raise click.UsageError("Exec requries at least another argument")
         else:
             cmd()
-    # else:
-    #     print(ctx.invoked_subcommand)
 
 
 def extra_args():
@@ -59,7 +57,6 @@ def extra_args():
         return None
 
     exec_cmd = sys.argv[2:] # Should try to use click instead of sys.argv
-    # exec_cmd = ' '.join(str(i) for i in cmd_list)
         
     return exec_cmd
 
@@ -220,10 +217,10 @@ def combine(filenames):
         try:
             if not workdir:
                 workdir = "/"+project_name
-            monofile.write('ENV PATH=\"' + workdir + ':${PATH}\"')
+            # monofile.write('ENV PATH=\"' + workdir + ':${PATH}\"')
             return workdir
         except NameError:
-            monofile.write('ENV PATH=\"/' + project_name + ':${PATH}\"')
+            # monofile.write('ENV PATH=\"/' + project_name + ':${PATH}\"')
             return "/"+project_name
 
 
