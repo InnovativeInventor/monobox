@@ -8,6 +8,7 @@ python:
 before_install: 
   - curl -fsSL https://goss.rocks/install | sudo sh
   - git clone https://github.com/InnovativeInventor/boxes
+  - pip3 install colorama
   - python3 setup.py install
 
 script: 
