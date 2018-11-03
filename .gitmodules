@@ -1,0 +1,3 @@
+[submodule "monobox-example"]
+	path = monobox-example
+	url = https://github.com/InnovativeInventor/monobox-example
