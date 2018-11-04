@@ -31,10 +31,11 @@ import requests as req
 import io
 import subprocess
 import click
+import sys
 
 
 @click.version_option(prog_name="monobox")
-@click.group(invoke_without_command=True)
+@click.group(invoke_without_command=True,context_settings=dict(ignore_unknown_options=True, allow_extra_args=True))
 @click.pass_context
 def cli(ctx):
     """
@@ -44,27 +45,66 @@ def cli(ctx):
     """
     if ctx.invoked_subcommand is None:
         ctx.invoke(bash)
+    elif ctx.invoked_subcommand == "cmd":
+        if len(sys.argv) <= 2:
+            raise click.UsageError("Exec requries at least another argument")
+        else:
+            cmd()
 
 
-@cli.command(help="Runs bash when starting up")
-def bash():
-    run("bash")
+def extra_args():
+    if len(sys.argv) <=2:
+        return None
+
+    exec_cmd = sys.argv[2:] # Should try to use click instead of sys.argv
+        
+    return exec_cmd
 
 
-@cli.command(help="Runs sh when starting up")
-def sh():
-    run("sh")
+@click.option('--verbose', is_flag=True)
+@cli.command(help="Runs whatever is specified", context_settings=dict(ignore_unknown_options=True, allow_extra_args=True))
+def cmd(verbose):
+    args = extra_args()
+    if verbose:
+        print(' '.join(str(i) for i in args))
+
+    run(args)
 
 
-@cli.command(help="Runs the python interperter instead of bash")
-def python():
-    run("python3")
+@click.option('--verbose', is_flag=True)
+@cli.command(help="Runs bash when starting up (default)", context_settings=dict(ignore_unknown_options=True, allow_extra_args=True))
+def bash(verbose):
+    args = ["bash"] + extra_args()
+    if verbose:
+        print(' '.join(str(i) for i in args))
+
+    run(args)
 
 
-@cli.command(help="Starts the container using your defaults")
+@click.option('--verbose', is_flag=True)
+@cli.command(help="Runs sh when starting up instead of bash", context_settings=dict(ignore_unknown_options=True, allow_extra_args=True))
+def sh(verbose):
+    args = ["sh"] + extra_args()
+    if verbose:
+        print(' '.join(str(i) for i in args))
+    
+    run(args)
+
+
+@click.option('--verbose', is_flag=True)
+@cli.command(help="Runs the python interperter instead of bash", context_settings=dict(ignore_unknown_options=True, allow_extra_args=True))
+def python(verbose):
+    args = ["python3"] + extra_args()
+    if verbose:
+        print(' '.join(str(i) for i in args))
+
+    run(args)
+
+
+@cli.command(help="Starts the container using your defaults", context_settings=dict(ignore_unknown_options=True, allow_extra_args=True))
 def default():
     # This is for specifing things like CMD ["bash"] in your Monofile or Dockerfile
-    run("")
+    run([])
 
 
 @cli.command(help="Deploys your application using your Dockerfile")
@@ -124,7 +164,7 @@ def run(command):
     docker_command.append(project_tag)
 
     if command is not "" and check_command() is False:  # Will run command only if it is specified and if CMD is not used
-        docker_command.append(command)
+        docker_command.extend(command)
 
     subprocess.call(docker_command)
     
@@ -174,12 +214,14 @@ def combine(filenames):
             else:
                 print("Warning: " + fname + " does not exist!")
 
-    try:
-        if not workdir:
-            workdir = "/"+project_name
-        return workdir
-    except NameError:
-        return "/"+project_name
+        try:
+            if not workdir:
+                workdir = "/"+project_name
+            # monofile.write('ENV PATH=\"' + workdir + ':${PATH}\"')
+            return workdir
+        except NameError:
+            # monofile.write('ENV PATH=\"/' + project_name + ':${PATH}\"')
+            return "/"+project_name
 
 
 def monocommand(line):

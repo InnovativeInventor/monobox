@@ -1,2 +1,2 @@
 cd boxes
-bash tests/test.sh
+python3 tests/test.py
