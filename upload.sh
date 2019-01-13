@@ -25,5 +25,9 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
+
+# Example: bash upload.sh
+# This script uploads to PyPI
+
 python3 setup.py sdist
 twine upload dist/*

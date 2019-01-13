@@ -34,5 +34,21 @@ Commands:
 
 ```
 
+## Example Usage
+Setups something with bash:
+'''
+monobox bash
+'''
+
+Setups something with git and curl:
+'''
+monobox git curl
+'''
+
+Runs a command (git status):
+'''
+monobox cmd git status
+'''
+
 ## Troubleshooting
 If you see `launchpadlib 1.10.6 requires testresources, which is not installed.`, then run `sudo apt install python-testresources` and restart the terminal.

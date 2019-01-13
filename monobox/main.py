@@ -49,12 +49,15 @@ def cli(ctx):
         if len(sys.argv) <= 2:
             raise click.UsageError("Exec requries at least another argument")
         else:
-            cmd()
+            cmd() # This will allow extra commands to be passed through
+    else:
+        eval(ctx.invoked_subcommand)
+        # Allow any generic command to be run
 
 
 def extra_args():
     if len(sys.argv) <=2:
-        return None
+        return []
 
     exec_cmd = sys.argv[2:] # Should try to use click instead of sys.argv
         
@@ -147,9 +150,10 @@ def build():
 
     print("Built as " + project_tag)
 
-def run(command):
+
+def run(command, verbose = False):
     project_tag = os.path.split(os.getcwd())[1].lower() + ":devel"
-    workdir = combine(['Dockerfile', 'Monofile'])
+    workdir = combine(['Dockerfile', 'Monofile'], cmd=command)
 
     client = docker.from_env()
 
@@ -166,8 +170,11 @@ def run(command):
     if command is not "" and check_command() is False:  # Will run command only if it is specified and if CMD is not used
         docker_command.extend(command)
 
+    if verbose == True:
+        print(docker_command)
+
     subprocess.call(docker_command)
-    
+
 
 def check_command():
     with open('.monobox', 'r') as monobox:
@@ -196,23 +203,35 @@ def expose_ports():
     return ports
 
 
-def combine(filenames):
+def combine(filenames, cmd = None):
     project_name = os.path.split(os.getcwd())[1]
+
+    files = []
+    for each_filename in filenames:
+        if os.path.isfile(each_filename):
+            files.append(each_filename)
+        else:
+            pass
+            # print("Warning: " + fname + " does not exist!")
+
     with open('.monobox', 'w') as monofile:
-        for fname in filenames:
-            if os.path.isfile(fname):
-                with open(fname) as infile:
-                    for line in infile:
-                        if line.partition(' ')[0] == "MONOBOX":
-                            lines_to_write = monocommand(line)
-                            monofile.writelines(lines_to_write)
-                        elif line.partition(' ')[0] == "WORKDIR":
-                            monofile.write(line)
-                            workdir = line
-                        else:
-                            monofile.write(line)
-            else:
-                print("Warning: " + fname + " does not exist!")
+        # print("files:" + str(files), len(files))
+        if len(files) == 0:
+            # This will only happen if default is triggered or nothing exists (need to test)
+            files = fetch_raw(cmd)
+
+        for fname in files:
+            with open(fname) as infile:
+                for line in infile:
+                    if line.partition(' ')[0] == "MONOBOX":
+                        lines_to_write = monocommand(line)
+                        monofile.writelines(lines_to_write)
+                    elif line.partition(' ')[0] == "WORKDIR":
+                        monofile.write(line)
+                        workdir = line
+                    else:
+                        monofile.write(line)
+                
 
         try:
             if not workdir:
@@ -222,6 +241,24 @@ def combine(filenames):
         except NameError:
             # monofile.write('ENV PATH=\"/' + project_name + ':${PATH}\"')
             return "/"+project_name
+
+def fetch_raw(cmd):
+    """
+    Fetches the default Monofile and Dockerfile
+    """
+    if cmd == None:
+        with open('Monofile', 'w+') as new_monofile:
+            new_monofile.write(req.get('https://raw.githubusercontent.com/InnovativeInventor/monobox/master/defaults/Monofile').content.decode('utf-8'))
+    else:
+        try:
+            with open('Monofile', 'w+') as new_monofile:
+                new_monofile.write(req.get('https://raw.githubusercontent.com/InnovativeInventor/boxes/master/boxes/'+cmd+'/Monofile'))
+        except:
+            fetch_raw(None)
+    with open('Dockerfile', 'w+') as new_dockerfile:
+        new_dockerfile.write(req.get('https://raw.githubusercontent.com/InnovativeInventor/monobox/master/defaults/Dockerfile').content.decode('utf-8'))
+
+    return ['Dockerfile', 'Monofile']
 
 
 def monocommand(line):
