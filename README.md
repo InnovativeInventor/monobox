@@ -35,17 +35,22 @@ Commands:
 ```
 
 ## Example Usage
-Setups something with bash:
-'''
+Setup something with bash:
+```
 monobox bash
-'''
+```
 
-Setups something with git and curl:
-'''
+Run something with bash:
+```
+monobox bash test.sh
+```
+
+Setup something with git and curl (planned):
+```
 monobox git curl
-'''
+```
 
-Runs a command (git status):
+Run a command (git status):
 '''
 monobox cmd git status
 '''
