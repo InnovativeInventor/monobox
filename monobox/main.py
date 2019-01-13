@@ -110,6 +110,15 @@ def default():
     run([])
 
 
+@cli.command(help="Removes all traces of monobox in the current directory, if they exist")
+def rm():
+    if os.path.exists('Monofile'):
+        os.remove('Monofile')
+    if os.path.exists('Dockerfile'):
+        os.remove('Dockerfile')
+    if os.path.exists('.monobox'):
+        os.remove('.monobox')
+
 @cli.command(help="Deploys your application using your Dockerfile")
 def deploy():
     project_tag = os.path.split(os.getcwd())[1].lower() + ":deploy"
