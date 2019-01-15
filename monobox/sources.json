@@ -1,0 +1,6 @@
+{
+    "Official": {
+	    "default": "https://raw.githubusercontent.com/InnovativeInventor/monobox/master/defaults/",
+	    "boxes": ["https://raw.githubusercontent.com/InnovativeInventor/boxes/master/boxes/"]
+    }
+}

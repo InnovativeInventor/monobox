@@ -32,6 +32,9 @@ import io
 import subprocess
 import click
 import sys
+import json
+from shutil import copyfile
+from pathlib import Path
 
 
 @click.version_option(prog_name="monobox")
@@ -67,10 +70,10 @@ def extra_args():
 @click.option('--verbose', is_flag=True)
 @cli.command(help="Runs whatever is specified", context_settings=dict(ignore_unknown_options=True, allow_extra_args=True))
 def cmd(verbose):
-    args = extra_args()
+    args = ['cmd'] + extra_args()
     if verbose:
         print(' '.join(str(i) for i in args))
-
+    
     run(args)
 
 
@@ -96,7 +99,7 @@ def sh(verbose):
 
 @click.option('--verbose', is_flag=True)
 @cli.command(help="Runs the python interperter instead of bash", context_settings=dict(ignore_unknown_options=True, allow_extra_args=True))
-def python(verbose):
+def python3(verbose):
     args = ["python3"] + extra_args()
     if verbose:
         print(' '.join(str(i) for i in args))
@@ -177,6 +180,8 @@ def run(command, verbose = False):
     docker_command.append(project_tag)
 
     if command is not "" and check_command() is False:  # Will run command only if it is specified and if CMD is not used
+        if command[0] == 'cmd':
+            command = command[1:]
         docker_command.extend(command)
 
     if verbose == True:
@@ -212,7 +217,12 @@ def expose_ports():
     return ports
 
 
-def combine(filenames, cmd = None):
+def combine(filenames, cmd = None, temp=False):
+    """
+    This will combine the Monofile and Dockerfile into .monobox. If these files
+    do not exist, they will be created.
+    """
+    source = fetch_config()
     project_name = os.path.split(os.getcwd())[1]
 
     files = []
@@ -225,15 +235,21 @@ def combine(filenames, cmd = None):
 
     with open('.monobox', 'w') as monofile:
         # print("files:" + str(files), len(files))
-        if len(files) == 0:
-            # This will only happen if default is triggered or nothing exists (need to test)
-            files = fetch_raw(cmd)
+        if cmd: 
+            if cmd[0] == 'cmd':
+                cmd = [cmd[1]]
+            
+            if len(files) == 0 and not temp:
+                # This will only happen if default is triggered or nothing exists (need to test)
+                files = fetch_raw(cmd, source, temp=False)
+            else: # Should default to not being intrusive
+                files = fetch_raw(cmd, source, temp=True)
 
         for fname in files:
             with open(fname) as infile:
                 for line in infile:
                     if line.partition(' ')[0] == "MONOBOX":
-                        lines_to_write = monocommand(line)
+                        lines_to_write = monocommand(line, source)
                         monofile.writelines(lines_to_write)
                     elif line.partition(' ')[0] == "WORKDIR":
                         monofile.write(line)
@@ -251,26 +267,55 @@ def combine(filenames, cmd = None):
             # monofile.write('ENV PATH=\"/' + project_name + ':${PATH}\"')
             return "/"+project_name
 
-def fetch_raw(cmd):
+
+def fetch_raw(cmd, source, temp=True):
     """
-    Fetches the default Monofile and Dockerfile
+    Fetches the default Monofile and Dockerfile given the cmd, source, and temp
+    preferences. If temp is True, only .monobox is written to. Otherwise,
+    Monobox and Dockerfile are also written to.
     """
-    if cmd == None:
-        with open('Monofile', 'w+') as new_monofile:
-            new_monofile.write(req.get('https://raw.githubusercontent.com/InnovativeInventor/monobox/master/defaults/Monofile').content.decode('utf-8'))
+    temp = False # Debug
+    if 'Custom' in source:
+        default = source['Custom']['default']
+        boxes = source['Custom']['boxes']
     else:
-        try:
-            with open('Monofile', 'w+') as new_monofile:
-                new_monofile.write(req.get('https://raw.githubusercontent.com/InnovativeInventor/boxes/master/boxes/'+cmd+'/Monofile'))
-        except:
-            fetch_raw(None)
-    with open('Dockerfile', 'w+') as new_dockerfile:
-        new_dockerfile.write(req.get('https://raw.githubusercontent.com/InnovativeInventor/monobox/master/defaults/Dockerfile').content.decode('utf-8'))
+        default = source['Official']['default']
+        boxes = source['Official']['boxes']
 
-    return ['Dockerfile', 'Monofile']
+    if temp:
+        monofile = '.monobox'
+        dockerfile = '.monobox'
+    else:
+        monofile = 'Monofile'
+        dockerfile = 'Dockerfile'
+
+    with open(dockerfile, 'w+') as new_dockerfile:
+        new_dockerfile.write(req.get(default + 'Dockerfile').content.decode('utf-8'))
+    
+    if cmd == None or len(boxes) == 0:
+        with open(monofile, 'a+') as new_monofile:
+            new_monofile.write(req.get(default + 'Monofile').content.decode('utf-8'))
+    else:
+        for each_cmd in cmd:
+            for each_box in boxes:
+                try:
+                    with open(monofile, 'a+') as new_monofile:
+                        print(str(each_box)+str(each_cmd)+'/Monofile') # Debug
+                        req_monofile = req.get(each_box+each_cmd+'/Monofile')
+                        req_monofile.raise_for_status()
+                        new_monofile.write(req_monofile.content.decode('utf-8'))
+                except:
+                    pass
+
+    if not os.path.isfile(monofile):
+        fetch_raw(None)
+    if temp:
+        return ['.monobox']
+    else:
+        return ['Dockerfile', 'Monofile']
 
 
-def monocommand(line):
+def monocommand(line, source):
     boxes = []
 
     for boxcommand in line.split(' ')[1:]:
@@ -283,25 +328,36 @@ def monocommand(line):
                     else:
                         boxes.append(infile_line)
         else:
-            boxes = boxes + fetch_box(processed_command)
+            boxes = boxes + fetch_box(processed_command, sources)
     return boxes
 
 
-def fetch_box(item):
+def fetch_box(item, sources):
+    if 'Custom' in source:
+        boxes = source['Custom']['boxes']
+    else:
+        boxes = source['Official']['boxes']
+    
     lines = []
     try:
         if "." in item:  # Can add your own boxes by using the url. Box names should not have periods in them
             print("Fetching remote box @" + item)
             boxfile = req.get(item)
         else:
-            boxfile = req.get('https://raw.githubusercontent.com/InnovativeInventor/boxes/master/boxes/'+item+'/Monofile')
-        boxfile.raise_for_status()
+            for each_source in sources:
+                try:
+                    boxfile = req.get(each_source + item + '/Monofile')
+                    boxfile.raise_for_status()
+                    break
+                except:
+                    pass
+            boxfile.raise_for_status()
     except req.HTTPError or req.URLError:
         try:
             boxfile = req.get('https://boxes.homelabs.space/boxes/'+item+'/Monofile')
             boxfile.raise_for_status()
         except req.HTTPError or req.URLError:
-            print("Monobox fetch error! The box you used does not exist")
+            print("Monobox fetch error! The box you used does not exist anywhere.")
 
     for each_line in io.StringIO(boxfile.content.decode('utf-8')):
         if each_line.partition(' ')[0] == "MONOBOX":
@@ -310,6 +366,22 @@ def fetch_box(item):
             lines.append(each_line)
 
     return lines
+
+
+def fetch_config() -> list:
+    """
+    Fetches the config file (source.json) or creates one if it doesn't exist.
+    """
+    if not os.path.exists(str(Path.home()) + '/.config/monobox/'):
+        os.mkdir(str(Path.home()) + '/.config/monobox/')
+
+    if not os.path.isfile(str(Path.home()) + '/.config/monobox/sources.json'):
+        copyfile('sources.json', str(Path.home()) + '/.config/monobox/sources.json')
+
+    with open(str(Path.home()) + '/.config/monobox/sources.json') as sources_json:
+        sources = json.load(sources_json)
+    
+    return sources
 
 
 if __name__ == "__main__":
