@@ -81,7 +81,6 @@ def cmd(verbose):
 @default.command(help="Creates a vm with whatever is specified and starts bash", context_settings=dict(ignore_unknown_options=True, allow_extra_args=True))
 def start(verbose):
     args = ['start'] + extra_args()
-    print(args) # Debug
 
     if verbose:
         print(' '.join(str(i) for i in args))
@@ -238,7 +237,6 @@ def expose_ports():
                 except IndexError:
                     internal_port_number = port_number
 
-                # print("EXPOSE detected, automatically exposing " + port_number + ":" + internal_port_number)  # Debug
                 ports.append(port_number+":"+internal_port_number)
     return ports
 
@@ -335,7 +333,6 @@ def fetch_raw(cmd, source, temp=True):
             for each_box in boxes:
                 try:
                     with open(monofile, 'a+') as new_monofile:
-                        print(str(each_box)+str(each_cmd)+'/Monofile') # Debug
                         req_monofile = req.get(each_box+each_cmd+'/Monofile')
                         req_monofile.raise_for_status()
                         new_monofile.write(req_monofile.content.decode('utf-8'))
