@@ -1,8 +1,10 @@
 **Monofile
 **Dockerfile
 **.monobox
-
+.DS_Store
 .idea/
+test.sh
+*.swp
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
