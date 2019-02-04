@@ -73,7 +73,6 @@ def cmd(verbose):
     args = ['cmd'] + extra_args()
     if verbose:
         print(' '.join(str(i) for i in args))
-    print(args) 
     run(args)
 
 
@@ -92,7 +91,6 @@ def start(verbose):
 @default.command(help = "Edit config", context_settings=dict(ignore_unknown_options=False, allow_extra_args=True))
 def config(verbose):
     sources = fetch_config()
-    print(json.dumps(sources, indent=4, sort_keys=True)) 
     
     print("Do you want to add a source? [Y/N]", end=' ')
     response = input()
@@ -378,7 +376,6 @@ def fetch_box(item, source):
         else:
             for each_source in boxes:
                 try:
-                    print(each_source + item + '/Monofile')
                     boxfile = req.get(each_source + item + '/Monofile')
                     boxfile.raise_for_status()
                     break
