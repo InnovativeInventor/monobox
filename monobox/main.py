@@ -198,7 +198,6 @@ def run(command, verbose = False):
     docker_command.append(project_tag)
 
     if command and check_command() is False:  # Will run command only if it is specified and if CMD is not used
-        print(command)
         if command[0] == 'cmd':
             command = command[1:]
         elif command[0] == 'start':
