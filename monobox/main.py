@@ -47,7 +47,7 @@ def default(ctx, verbose):
 
     See https://github.com/InnovativeInventor/monobox for more
     """
-    cmd_list = ['cmd', 'start', 'deploy', 'config']
+    cmd_list = ['cmd', 'start', 'deploy', 'config', 'build']
     if ctx.invoked_subcommand in cmd_list:
         if len(sys.argv) <= 2 and not ctx.invoked_subcommand == 'config':
             raise click.UsageError("Exec requries at least another argument")
