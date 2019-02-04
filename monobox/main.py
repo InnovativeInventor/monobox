@@ -49,7 +49,7 @@ def default(ctx, verbose):
     """
     cmd_list = ['cmd', 'start', 'deploy', 'config', 'build']
     if ctx.invoked_subcommand in cmd_list:
-        if len(sys.argv) <= 2 and not ctx.invoked_subcommand == 'config':
+        if len(sys.argv) <= 2 and ctx.invoked_subcommand in ['cmd','start']:
             raise click.UsageError("Exec requries at least another argument")
         else:
             # cmd_obj = ctx.get_command(ctx,ctx.invoked_subcommand)
