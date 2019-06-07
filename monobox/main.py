@@ -25,21 +25,24 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-import docker
-import os
-import requests as req
 import io
-import subprocess
-import click
-import sys
 import json
-from shutil import copyfile
+import os
+import subprocess
+import sys
 from pathlib import Path
+from shutil import copyfile
+
+import click
+import docker
+import requests as req
 
 
 @click.version_option(prog_name="monobox")
 @click.option('--verbose', is_flag=True)
-@click.group(invoke_without_command=True,context_settings=dict(ignore_unknown_options=True, allow_extra_args=True))
+@click.group(
+    invoke_without_command=True,
+    context_settings=dict(ignore_unknown_options=True, allow_extra_args=True))
 @click.pass_context
 def default(ctx, verbose):
     """
@@ -47,9 +50,9 @@ def default(ctx, verbose):
 
     See https://github.com/InnovativeInventor/monobox for more
     """
-    cmd_list = ['cmd', 'start', 'deploy', 'config', 'build']
+    cmd_list = ['cmd', 'start', 'deploy', 'config', 'build', 'rm']
     if ctx.invoked_subcommand in cmd_list:
-        if len(sys.argv) <= 2 and ctx.invoked_subcommand in ['cmd','start']:
+        if len(sys.argv) <= 2 and ctx.invoked_subcommand in ['cmd', 'start']:
             raise click.UsageError("Exec requries at least another argument")
         else:
             # cmd_obj = ctx.get_command(ctx,ctx.invoked_subcommand)
@@ -58,17 +61,20 @@ def default(ctx, verbose):
     else:
         run([])
 
+
 def extra_args():
-    if len(sys.argv) <=2:
+    if len(sys.argv) <= 2:
         return []
 
-    exec_cmd = sys.argv[2:] # Should try to use click instead of sys.argv
-        
+    exec_cmd = sys.argv[2:]  # Should try to use click instead of sys.argv
+
     return exec_cmd
 
 
 @click.option('--verbose', is_flag=True)
-@default.command(help="Runs whatever is specified", context_settings=dict(ignore_unknown_options=True, allow_extra_args=True))
+@default.command(
+    help="Runs whatever is specified",
+    context_settings=dict(ignore_unknown_options=True, allow_extra_args=True))
 def cmd(verbose):
     args = ['cmd'] + extra_args()
     if verbose:
@@ -77,49 +83,56 @@ def cmd(verbose):
 
 
 @click.option('--verbose', is_flag=True)
-@default.command(help="Creates a vm with whatever is specified and starts bash", context_settings=dict(ignore_unknown_options=True, allow_extra_args=True))
+@default.command(
+    help="Creates a vm with whatever is specified and starts bash",
+    context_settings=dict(ignore_unknown_options=True, allow_extra_args=True))
 def start(verbose):
     args = ['start'] + extra_args()
 
     if verbose:
         print(' '.join(str(i) for i in args))
-    
+
     run(args)
 
 
 @click.option('--verbose', is_flag=True)
-@default.command(help = "Edit config", context_settings=dict(ignore_unknown_options=False, allow_extra_args=True))
+@default.command(
+    help="Edit config",
+    context_settings=dict(ignore_unknown_options=False, allow_extra_args=True))
 def config(verbose):
     sources = fetch_config()
-    
+
     print("Do you want to add a source? [Y/N]", end=' ')
     response = input()
-    if response in ["Y","y","YES","yes"]:
+    if response in ["Y", "y", "YES", "yes"]:
         print('Please input your URL:')
         url = input().rstrip()
         if 'Custom' not in sources:
             sources['Custom'] = {}
-        
+
         if 'boxes' not in sources['Custom']:
             sources['Custom'].update({'boxes': [url]})
         else:
-            sources['Custom']['boxes'] += [url] 
+            sources['Custom']['boxes'] += [url]
 
-
-    print("Do you want to change the default Monofile and Dockerfile? [Y/N]", end=' ')
+    print(
+        "Do you want to change the default Monofile and Dockerfile? [Y/N]",
+        end=' ')
     response = input()
-    if response in ["Y","y","YES","yes"]:
+    if response in ["Y", "y", "YES", "yes"]:
         print('Please input your URL:')
         url = input().rstrip()
         if 'Custom' not in sources:
             sources['Custom'] = {}
-        
+
         if 'boxes' not in sources['Custom']:
             sources['Custom'].update({'default': url})
         else:
             sources['Custom']['default'] = url
-    with open(str(Path.home()) + '/.config/monobox/sources.json', 'w') as outfile:
-        json.dump(sources, outfile, indent = 4)
+    with open(str(Path.home()) + '/.config/monobox/sources.json',
+              'w') as outfile:
+        json.dump(sources, outfile, indent=4)
+
 
 @default.command(help="Deletes Monofile, Dockerfile, and .monobox")
 def rm():
@@ -136,7 +149,8 @@ def check_config():
         os.mkdir(str(Path.home()) + '/.config/monobox/')
 
     if not os.path.isfile(str(Path.home()) + '/.config/monobox/sources.json'):
-        copyfile('sources.json', str(Path.home()) + '/.config/monobox/sources.json')
+        copyfile('sources.json',
+                 str(Path.home()) + '/.config/monobox/sources.json')
 
 
 @default.command(help="Deploys your application using your Dockerfile")
@@ -154,8 +168,9 @@ def deploy():
     with open('.monobox', 'rb') as dockerfile:
         client.images.build(fileobj=dockerfile, pull=True, tag=project_tag)
 
-
-    docker_command = ["docker", "run", "-d", "--restart", "unless-stopped", "-w="+workdir]
+    docker_command = [
+        "docker", "run", "-d", "--restart", "unless-stopped", "-w=" + workdir
+    ]
     port_command = expose_ports()
     docker_command.extend(port_command)
     docker_command.append(project_tag)
@@ -169,18 +184,22 @@ def deploy():
 @default.command(help="Builds the docker image")
 def build():
     project_tag = os.path.split(os.getcwd())[1].lower()
-    combine(['Dockerfile', 'Monofile']) # No need for workdir
+    combine(['Dockerfile', 'Monofile'])  # No need for workdir
 
     client = docker.from_env()
 
     # Builds
     with open('.monobox', 'rb') as dockerfile:
-        client.images.build(dockerfile='.monobox', path=os.getcwd(), pull=True, tag=project_tag)
+        client.images.build(
+            dockerfile='.monobox',
+            path=os.getcwd(),
+            pull=True,
+            tag=project_tag)
 
     print("Built as " + project_tag)
 
 
-def run(command, verbose = False):
+def run(command, verbose=False):
     build_dir = os.getcwd()
     project_tag = os.path.split(build_dir)[1].lower() + ":devel"
     workdir = combine(['Dockerfile', 'Monofile'], cmd=command)
@@ -189,21 +208,25 @@ def run(command, verbose = False):
 
     # Builds
     with open('.monobox', 'rb') as dockerfile:
-        client.images.build(dockerfile='.monobox', path=build_dir, pull=True, tag=project_tag)
+        client.images.build(
+            dockerfile='.monobox', path=build_dir, pull=True, tag=project_tag)
 
-    docker_command = ["docker", "run", "--rm", "-v", build_dir+":"+workdir, "-it"]
+    docker_command = [
+        "docker", "run", "--rm", "-v", build_dir + ":" + workdir, "-it"
+    ]
 
     port_command = expose_ports()
     docker_command.extend(port_command)
     docker_command.append(project_tag)
 
-    if command and check_command() is False:  # Will run command only if it is specified and if CMD is not used
+    if command and check_command(
+    ) is False:  # Will run command only if it is specified and if CMD is not used
         if command[0] == 'cmd':
             command = command[1:]
         elif command[0] == 'start':
-            command = ['bash'] # Later on, build a smarter way of doing this 
+            command = ['bash']  # Later on, build a smarter way of doing this
         else:
-            command = [command[0]] # When does this get used?
+            command = [command[0]]  # When does this get used?
         docker_command.extend(command)
 
     if verbose == True:
@@ -215,7 +238,8 @@ def run(command, verbose = False):
 def check_command():
     with open('.monobox', 'r') as monobox:
         for lines in monobox:
-            if lines.partition(' ')[0] == "CMD" or lines.partition(' ')[0] == "ENTRYPOINT":
+            if lines.partition(' ')[0] == "CMD" or lines.partition(
+                    ' ')[0] == "ENTRYPOINT":
                 return True
     return False
 
@@ -230,15 +254,16 @@ def expose_ports():
 
                 port_number = port_setting.partition(':')[0].rstrip()
                 try:
-                    internal_port_number = port_setting.partition(':')[3].rstrip()
+                    internal_port_number = port_setting.partition(
+                        ':')[3].rstrip()
                 except IndexError:
                     internal_port_number = port_number
 
-                ports.append(port_number+":"+internal_port_number)
+                ports.append(port_number + ":" + internal_port_number)
     return ports
 
 
-def combine(filenames, cmd = None, temp=False):
+def combine(filenames, cmd=None, temp=False):
     """
     This will combine the Monofile and Dockerfile into .monobox. If these files
     do not exist, they will be created.
@@ -256,7 +281,7 @@ def combine(filenames, cmd = None, temp=False):
 
     with open('.monobox', 'w') as monofile:
         # print("files:" + str(files), len(files))
-        if cmd: 
+        if cmd:
             if cmd[0] == 'cmd':
                 cmd = [cmd[1]]
 
@@ -266,7 +291,7 @@ def combine(filenames, cmd = None, temp=False):
             if len(files) == 0 and not temp:
                 # This will only happen if default is triggered or nothing exists (need to test)
                 files = fetch_raw(cmd, source, temp=False)
-            else: # Should default to not being intrusive
+            else:  # Should default to not being intrusive
                 files = fetch_raw(cmd, source, temp=True)
         workdir = False
         for fname in files:
@@ -286,7 +311,7 @@ def combine(filenames, cmd = None, temp=False):
 
         if not workdir:
             workdir = "/" + project_name
-        
+
         return workdir
 
 
@@ -296,7 +321,7 @@ def fetch_raw(cmd, source, temp=True):
     preferences. If temp is True, only .monobox is written to. Otherwise,
     Monobox and Dockerfile are also written to.
     """
-    temp = False # Debug
+    temp = False  # Debug
     if 'Custom' in source:
         if 'default' in source['Custom']:
             default = source['Custom']['default']
@@ -320,19 +345,23 @@ def fetch_raw(cmd, source, temp=True):
         dockerfile = 'Dockerfile'
 
     with open(dockerfile, 'w+') as new_dockerfile:
-        new_dockerfile.write(req.get(default + 'Dockerfile').content.decode('utf-8'))
-    
+        new_dockerfile.write(
+            req.get(default + 'Dockerfile').content.decode('utf-8'))
+
     if cmd == None or len(boxes) == 0:
         with open(monofile, 'a+') as new_monofile:
-            new_monofile.write(req.get(default + 'Monofile').content.decode('utf-8'))
+            new_monofile.write(
+                req.get(default + 'Monofile').content.decode('utf-8'))
     else:
         for each_cmd in cmd:
             for each_box in boxes:
                 try:
                     with open(monofile, 'a+') as new_monofile:
-                        req_monofile = req.get(each_box+each_cmd+'/Monofile')
+                        req_monofile = req.get(each_box + each_cmd +
+                                               '/Monofile')
                         req_monofile.raise_for_status()
-                        new_monofile.write(req_monofile.content.decode('utf-8'))
+                        new_monofile.write(
+                            req_monofile.content.decode('utf-8'))
                 except:
                     pass
 
@@ -349,8 +378,8 @@ def monocommand(line, source):
 
     for boxcommand in line.split(' ')[1:]:
         processed_command = boxcommand.rstrip()
-        if os.path.isfile('boxes/'+processed_command+'/Monofile'):
-            with open('boxes/'+processed_command+'/Monofile') as infile:
+        if os.path.isfile('boxes/' + processed_command + '/Monofile'):
+            with open('boxes/' + processed_command + '/Monofile') as infile:
                 for infile_line in infile:
                     if infile_line.partition(' ')[0] == "MONOBOX":
                         boxes = boxes + monocommand(infile_line)
@@ -366,7 +395,7 @@ def fetch_box(item, source):
         boxes = source['Custom']['boxes']
     else:
         boxes = source['Official']['boxes']
-    
+
     lines = []
     try:
         if "." in item:  # Can add your own boxes by using the url. Box names should not have periods in them
@@ -383,10 +412,13 @@ def fetch_box(item, source):
             boxfile.raise_for_status()
     except:
         try:
-            boxfile = req.get('https://boxes.homelabs.space/boxes/'+item+'/Monofile')
+            boxfile = req.get('https://boxes.homelabs.space/boxes/' + item +
+                              '/Monofile')
             boxfile.raise_for_status()
         except req.HTTPError or req.URLError:
-            print("Monobox fetch error! The box you used does not exist anywhere.")
+            print(
+                "Monobox fetch error! The box you used does not exist anywhere."
+            )
 
     for each_line in io.StringIO(boxfile.content.decode('utf-8')):
         if each_line.partition(' ')[0] == "MONOBOX":
@@ -403,9 +435,10 @@ def fetch_config() -> list:
     """
     check_config()
 
-    with open(str(Path.home()) + '/.config/monobox/sources.json') as sources_json:
+    with open(str(Path.home()) +
+              '/.config/monobox/sources.json') as sources_json:
         sources = json.load(sources_json)
-    
+
     return sources
 
 
