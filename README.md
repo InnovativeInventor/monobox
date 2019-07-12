@@ -1,7 +1,7 @@
 ## monobox
 [![Build Status](https://travis-ci.com/InnovativeInventor/monobox.svg?branch=master)](https://travis-ci.com/InnovativeInventor/monobox)
 
-A uniform flexible environment for coding, testing, and deploying using Docker
+A flexible, simple, (and secure) environment for rapidly coding, testing, and deploying applications using Docker. All development/testing currently takes place on `cmd-feature`.
 
 ## Suggested Workflow
 - Create your Monofile and Dockerfile. Your Monofile will include everything you need when developing, and your Dockerfile will include everything else
